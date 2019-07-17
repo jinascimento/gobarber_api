@@ -1,5 +1,7 @@
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore, format, subHours } from 'date-fns';
+import {
+  startOfHour, parseISO, isBefore, format, subHours,
+} from 'date-fns';
 import pt from 'date-fns/locale/pt';
 import Appointment from '../models/Appointments';
 import User from '../models/User';
@@ -103,16 +105,20 @@ class AppointmentController {
         model: User,
         as: 'provider',
         attributes: ['name', 'email'],
+      },
+      {
+        model: User,
+        as: 'user',
       }],
     });
 
     if (appointment.user_id !== req.userId) {
-      return res.json(401).json({ error: 'You dont have permission to cancel this appointment' });
+      return res.status(401).json({ error: 'You dont have permission to cancel this appointment' });
     }
 
     const dateWithSub = subHours(appointment.date, 2);
 
-    if (isBefore(dateWithSub, new Date())){
+    if (isBefore(dateWithSub, new Date())) {
       return res.json(401).json({
         error: 'You cant only cancel appointments 2 hours is adavance.',
       });
@@ -124,7 +130,16 @@ class AppointmentController {
     await Mail.sendMail({
       to: `${appointment.provider.name} <${appointment.provider.email}>`,
       subject: 'Agendamento cancelado',
-      text: 'Você tem um novo cancelamento',
+      template: 'cancellation',
+      context: {
+        provider: appointment.provider.name,
+        user: appointment.user.name,
+        date: format(
+          appointment.date,
+          "'dia' dd 'de' MMMM', ás' H:mm'h'",
+          { locale: pt },
+        ),
+      },
     });
     return res.json(appointment);
   }
