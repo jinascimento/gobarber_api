@@ -5,6 +5,7 @@ import 'express-async-errors';
 import * as Sentry from '@sentry/node';
 import path from 'path';
 import Youch from 'youch';
+import cors from 'cors';
 import routes from './routes';
 import sentryConfig from './config/Sentry';
 import './database';
@@ -20,6 +21,7 @@ class App {
 
   middlewares() {
     this.server.use(Sentry.Handlers.requestHandler());
+    this.server.use(cors());
     this.server.use(express.json());
     this.server.use('/files', express.static(path.resolve(__dirname, '..', 'tmp', 'uploads')));
   }
